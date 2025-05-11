@@ -15,6 +15,7 @@ try:
     )
     from PyQt6.QtGui import QAction
     from PyQt6.QtCore import Qt
+    from PyQt6.QtSvgWidgets import QSvgWidget  # Add this import for SVG preview
 except ImportError:
     print("PyQt6 not found. Please install it: pip install PyQt6")
     sys.exit(1)
@@ -488,11 +489,20 @@ class ArtGridWindow(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle("Art Grid Generator (PyQt6)")
-        self.setGeometry(100, 100, 700, 800) 
+        self.setGeometry(100, 100, 900, 800)  # Adjust width to accommodate the preview sidebar
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        main_layout = QVBoxLayout(central_widget)
+        main_layout = QHBoxLayout(central_widget)  # Change to horizontal layout to include the preview sidebar
+
+        controls_layout = QVBoxLayout()  # Separate layout for controls
+        main_layout.addLayout(controls_layout, 2)  # Add controls layout to the main layout
+
+        # Add SVG preview widget
+        self.preview_widget = QSvgWidget()
+        self.preview_widget.setMinimumSize(300, 300)
+        self.preview_widget.setStyleSheet("border: 1px solid #ccc; background-color: #fff;")
+        main_layout.addWidget(self.preview_widget, 1)  # Add preview widget to the main layout
 
         menubar = self.menuBar()
         file_menu = menubar.addMenu("&File")
@@ -521,7 +531,7 @@ class ArtGridWindow(QMainWindow):
         self.square_size_spin.setRange(10, 500); self.square_size_spin.setValue(100); self.square_size_spin.setSingleStep(10)
         grid_layout.addRow("Square Size (px):", self.square_size_spin)
         grid_group.setLayout(grid_layout)
-        main_layout.addWidget(grid_group)
+        controls_layout.addWidget(grid_group)
 
         palette_group = QGroupBox("Color Palette")
         palette_layout = QFormLayout()
@@ -538,7 +548,7 @@ class ArtGridWindow(QMainWindow):
         self.palette_index_spin.setRange(0, 0) 
         palette_layout.addRow("Palette Index:", self.palette_index_spin)
         palette_group.setLayout(palette_layout)
-        main_layout.addWidget(palette_group)
+        controls_layout.addWidget(palette_group)
 
         styles_group = QGroupBox("Block Styles (select one or more)")
         styles_scroll_area = QScrollArea()
@@ -562,7 +572,7 @@ class ArtGridWindow(QMainWindow):
         styles_group_layout_wrapper = QVBoxLayout() 
         styles_group_layout_wrapper.addWidget(styles_scroll_area)
         styles_group.setLayout(styles_group_layout_wrapper)
-        main_layout.addWidget(styles_group)
+        controls_layout.addWidget(styles_group)
         styles_scroll_area.setMinimumHeight(150)
 
         misc_group = QGroupBox("Big Block & Chaos")
@@ -579,13 +589,21 @@ class ArtGridWindow(QMainWindow):
         self.seed_edit = QLineEdit(); self.seed_edit.setPlaceholderText("Integer or blank for random")
         misc_layout.addRow("Random Seed:", self.seed_edit)
         misc_group.setLayout(misc_layout)
-        main_layout.addWidget(misc_group)
+        controls_layout.addWidget(misc_group)
 
+        # Add a "Generate Preview" button
+        self.preview_button = QPushButton("Generate Preview")
+        self.preview_button.setFixedHeight(40)
+        self.preview_button.setStyleSheet("font-size: 16px; background-color: #2196F3; color: white; border-radius: 5px; padding: 5px;")
+        self.preview_button.clicked.connect(self.run_preview_generation)
+        controls_layout.addWidget(self.preview_button)
+
+        # Add the "Generate & Save SVG" button
         self.generate_button = QPushButton("Generate & Save SVG")
         self.generate_button.setFixedHeight(40)
         self.generate_button.setStyleSheet("font-size: 16px; background-color: #4CAF50; color: white; border-radius: 5px; padding: 5px;")
         self.generate_button.clicked.connect(self.run_generation_and_save)
-        main_layout.addWidget(self.generate_button)
+        controls_layout.addWidget(self.generate_button)
 
         self.statusBar = QStatusBar()
         self.setStatusBar(self.statusBar)
@@ -665,6 +683,33 @@ class ArtGridWindow(QMainWindow):
             'seed': valid_seed_param, 
         }
         return params
+
+    def run_preview_generation(self):
+        """Generate and display a preview of the artwork."""
+        self.statusBar.showMessage("Generating preview...")
+        QApplication.processEvents()
+
+        params = self.get_generation_parameters()
+        if not params:
+            self.statusBar.showMessage("Preview generation cancelled due to parameter errors.", 5000)
+            return
+
+        try:
+            svg_data_str = generate_art_svg_string(params)
+            if svg_data_str is None:
+                QMessageBox.critical(self, "Preview Failed", "SVG generation returned no data.")
+                self.statusBar.showMessage("Error during preview generation.", 5000)
+                return
+
+            # Load the SVG data into the preview widget
+            self.preview_widget.load(bytearray(svg_data_str, encoding="utf-8"))
+            self.statusBar.showMessage("Preview generated successfully.", 5000)
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"An unexpected error occurred: {e}")
+            self.statusBar.showMessage(f"Error: {e}", 5000)
+            import traceback
+            traceback.print_exc()
 
     def run_generation_and_save(self):
         self.statusBar.showMessage("Generating artwork...")
