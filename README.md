@@ -9,6 +9,7 @@ Please refer to the original repository for its version and history:
 
 ## Key Changes in This Fork
 Added ComfyUI_PNGArtGridGeneratorNode.py, a custom node for comfyui, just drop the python script in to your comfyui custom nodes folder.
+
 This version (`SVG_ArtGrid.py`) has been significantly updated from the original script's base:
 added ('SVG_Character_Creator_UI.py') to experiment with animated character generation. UI included in the seperate script.
 
