@@ -8,8 +8,8 @@ Please refer to the original repository for its version and history:
 [https://github.com/MushroomFleet/SVG_ArtGrid](https://github.com/MushroomFleet/SVG_ArtGrid)
 
 ## Key Changes in This Fork
-
 This version (`SVG_ArtGrid.py`) has been significantly updated from the original script's base:
+added ('SVG_Character_Creator_UI.py') to experiment with animated character generation. UI included in the seperate script.
 
 * **Graphical User Interface (GUI):** Implemented using PyQt6, providing an interactive way to control generation parameters.
 * **Enhanced Customization via GUI:**
